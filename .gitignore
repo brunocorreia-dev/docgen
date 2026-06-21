@@ -1,0 +1,9 @@
+target/
+*.class
+*.jar
+*.war
+*.ear
+dependency-reduced-pom.xml
+.idea/
+*.iml
+.DS_Store
