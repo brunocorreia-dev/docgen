@@ -1,104 +1,80 @@
-# AI-Powered Documentation Generator for Code Repositories
-===========================================================
+# docgen
 
-## Table of Contents
------------------
+CLI that scans a code repository and generates `README.md` and `ARCHITECTURE.md` (Mermaid diagram) using a local LLM via Ollama — no API key required.
 
-* [Introduction](#introduction)
-* [Features and Capabilities](#features-and-capabilities)
-* [Tech Stack and Key Dependencies](#tech-stack-and-key-dependencies)
-* [Prerequisites](#prerequisites)
-* [Installation and Setup Instructions](#installation-and-setup-instructions)
-* [Usage Examples with Real Code Snippets](#usage-examples-with-real-code-snippets)
-* [Project Structure Overview](#project-structure-overview)
-* [Configuration Options](#configuration-options)
+## Requirements
 
-## Introduction
-------------
+- Java 21+
+- [Ollama](https://ollama.com) running locally (`ollama serve`)
+- llama3.2 pulled (`ollama pull llama3.2`)
 
-This project is an AI-powered documentation generator for code repositories. It leverages a local LLM (Ollama) model to generate comprehensive, professional README and architecture diagram files from a given repository.
-
-## Features and Capabilities
--------------------------
-
-### Code Generation
-
-* Generates README file with project title, clear description, features, tech stack, key dependencies, configuration options, and user documentation.
-* Creates architecture diagram by extracting relevant information from the source code.
-
-### Customization Options
-
-* Allows for customization of the generated files through a JSON configuration file.
-
-## Tech Stack and Key Dependencies
----------------------------------
-
-* LLM (Ollama) model: Provides the core AI intelligence for generating documentation.
-* Java 8+ and Maven/Gradle build tools: Used for building and packaging the project.
-* Scala and Kotlin support: For working with source code files from various programming languages.
-
-## Prerequisites
---------------
-
-To use this tool, you'll need:
-
-* A local LLM (Ollama) server running at `http://localhost:11434`.
-* Java 8+ or higher installed on your system.
-* Maven or Gradle build tools installed on your system.
-
-## Installation and Setup Instructions
---------------------------------------
-
-1. Clone the repository using Git: `git clone https://github.com/your-username/repo.git`
-2. Navigate to the project directory: `cd repo`
-3. Install dependencies: `mvn clean install` (or Gradle equivalent)
-4. Configure the LLM server URL: `mvn configure --set property.llam.model.url=http://localhost:11434` (or Gradle equivalent)
-
-## Usage Examples with Real Code Snippets
------------------------------------------
+## Installation
 
 ```bash
-java -jar repo.jar -c path/to/config.json -r path/to/repository/directory
+git clone https://github.com/brunocorreia-dev/docgen.git
+cd docgen
 ```
 
-Example configuration file (`config.json`):
-```json
-{
-  "title": "My Awesome Project",
-  "description": "A brief summary of my project.",
-  "features": [
-    "Feature 1",
-    "Feature 2"
-  ],
-  "techStack": {
-    "programmingLangs": ["Java", "Kotlin"],
-    "frameworks": ["Spring Boot"]
-  }
-}
-```
+Build the fat jar:
 
-Example usage:
 ```bash
-java -jar repo.jar -c path/to/config.json -r src/main/java/path/to/repository/directory
+java -cp "$MVN_HOME/boot/plexus-classworlds-2.9.0.jar" \
+  -Dclassworlds.conf="$MVN_HOME/bin/m2.conf" \
+  -Dmaven.multiModuleProjectDirectory=$(pwd) \
+  org.codehaus.plexus.classworlds.launcher.Launcher \
+  -f pom.xml package -q
 ```
 
-## Project Structure Overview
----------------------------
+> `$MVN_HOME` is the path to your Maven installation (e.g. `~/idea-IU-.../plugins/maven/lib/maven3`).
 
-The project consists of the following directories:
+## Usage
 
-* `src/main/java`: Source code files from various programming languages.
-* `src/main/resources`: Configuration files, including the JSON configuration file.
-* `target`: Compiled class files and other generated resources.
+```bash
+java -jar target/docgen.jar <repo-path> [options]
+```
 
-## Configuration Options
-----------------------
+| Argument | Description | Default |
+|---|---|---|
+| `<repo-path>` | Path to the repository to document | `.` (current dir) |
+| `-o`, `--output` | Directory where files will be written | `.` (current dir) |
+| `-m`, `--model` | Ollama model to use | `llama3.2` |
 
-You can customize the generated README file by modifying the `config.json` file. The following options are available:
+**Example:**
 
-* `title`: Project title (string).
-* `description`: Brief summary of the project (string).
-* `features`: List of project features (array of strings).
-* `techStack`: Object containing programming languages and frameworks used in the project (object).
+```bash
+# Start Ollama
+ollama serve
 
-To learn more about configuration options, refer to the `config.json` file documentation.
+# Generate docs for a project
+java -jar target/docgen.jar /path/to/my-project -o /path/to/output
+
+# Using a different model
+java -jar target/docgen.jar /path/to/my-project -m mistral -o ./docs
+```
+
+## Output
+
+- `README.md` — project overview generated from source code analysis
+- `ARCHITECTURE.md` — Mermaid architecture diagram inferred from the codebase
+
+## Project Structure
+src/main/java/com/docgen/
+
+├── DocGenCLI.java       # CLI entry point (Picocli)
+
+├── RepoScanner.java     # Walks the repo, collects up to 400KB of content
+
+├── RepoContext.java     # Record holding file tree, contents and stats
+
+├── PromptBuilder.java   # Builds prompts for README and architecture generation
+
+├── LLMClient.java       # HTTP client → Ollama /api/generate (streaming)
+
+└── OutputWriter.java    # Writes README.md and ARCHITECTURE.md
+
+## Tech Stack
+
+- Java 21
+- [Picocli](https://picocli.info) — CLI framework
+- [Ollama](https://ollama.com) — local LLM inference
+- Maven — build tool
