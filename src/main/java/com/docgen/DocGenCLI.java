@@ -11,7 +11,7 @@ import java.nio.file.Path;
     name = "docgen",
     mixinStandardHelpOptions = true,
     version = "1.0",
-    description = "Generate README and architecture diagram from a code repository using a local LLM (Ollama)"
+    description = "Generate README and architecture diagram from a code repository using an LLM"
 )
 public class DocGenCLI implements Runnable {
 
@@ -21,8 +21,14 @@ public class DocGenCLI implements Runnable {
     @Option(names = {"-o", "--output"}, description = "Output directory for generated files (default: current dir)", defaultValue = ".")
     private Path outputDir;
 
-    @Option(names = {"-m", "--model"}, description = "Ollama model to use (default: llama3.2)", defaultValue = "llama3.2")
+    @Option(names = {"--provider"}, description = "LLM provider: gemini (default) or ollama", defaultValue = "gemini")
+    private String provider;
+
+    @Option(names = {"-m", "--model"}, description = "Model to use (default: gemini-2.0-flash for Gemini, llama3.2 for Ollama)")
     private String model;
+
+    @Option(names = {"--api-key"}, description = "Gemini API key (or set GEMINI_API_KEY env var)")
+    private String apiKey;
 
     public static void main(String[] args) {
         int exitCode = new CommandLine(new DocGenCLI()).execute(args);
@@ -32,15 +38,29 @@ public class DocGenCLI implements Runnable {
     @Override
     public void run() {
         try {
+            if (model == null || model.isBlank()) {
+                model = provider.equals("ollama") ? "llama3.2" : "gemini-2.0-flash";
+            }
+
+            if ("gemini".equalsIgnoreCase(provider)) {
+                if (apiKey == null || apiKey.isBlank()) {
+                    apiKey = System.getenv("GEMINI_API_KEY");
+                }
+                if (apiKey == null || apiKey.isBlank()) {
+                    System.err.println("Error: Gemini API key required. Use --api-key <key> or set GEMINI_API_KEY.");
+                    System.exit(1);
+                }
+            }
+
             Path absRepo = repoPath.toAbsolutePath().normalize();
             Path absOutput = outputDir.toAbsolutePath().normalize();
 
             System.out.println("Scanning repository: " + absRepo);
             RepoContext ctx = new RepoScanner().scan(absRepo);
             System.out.printf("Collected %d files (%.1f KB of content)%n", ctx.fileCount(), ctx.contentSizeKb());
-            System.out.println("Model: " + model);
+            System.out.println("Provider: " + provider + " | Model: " + model);
 
-            LLMClient llm = new LLMClient(model);
+            LLMProvider llm = LLMClient.create(provider, model, apiKey);
 
             System.out.println("\n=== Generating README ===\n");
             String readme = llm.generate(PromptBuilder.readmePrompt(ctx));

@@ -1,12 +1,12 @@
 # docgen
 
-CLI that scans a code repository and generates `README.md` and `ARCHITECTURE.md` (Mermaid diagram) using a local LLM via Ollama — no API key required.
+CLI that scans a code repository and generates `README.md` and `ARCHITECTURE.md` (Mermaid diagram) using an LLM. Supports Google Gemini (default) and Ollama (local, no API key required).
 
 ## Requirements
 
 - Java 21+
-- [Ollama](https://ollama.com) running locally (`ollama serve`)
-- llama3.2 pulled (`ollama pull llama3.2`)
+- **Gemini (default):** free API key from [aistudio.google.com](https://aistudio.google.com)
+- **Ollama (alternative):** [Ollama](https://ollama.com) running locally (`ollama serve`) + model pulled
 
 ## Installation
 
@@ -27,6 +27,16 @@ Downloads the latest `docgen.jar` from GitHub Releases, places it in `~/.local/s
 java -jar docgen.jar <repo-path> [options]
 ```
 
+## Providers
+
+### Gemini (default)
+
+Uses the Google Gemini API. Requires a free API key from [aistudio.google.com](https://aistudio.google.com). Default model: `gemini-2.0-flash`.
+
+### Ollama (alternative)
+
+Runs locally with no API key. Requires `ollama serve` running and a model pulled (e.g. `ollama pull llama3.2`). Default model: `llama3.2`.
+
 ## Usage
 
 ```bash
@@ -37,19 +47,22 @@ java -jar target/docgen.jar <repo-path> [options]
 |---|---|---|
 | `<repo-path>` | Path to the repository to document | `.` (current dir) |
 | `-o`, `--output` | Directory where files will be written | `.` (current dir) |
-| `-m`, `--model` | Ollama model to use | `llama3.2` |
+| `--provider` | LLM provider: `gemini` or `ollama` | `gemini` |
+| `-m`, `--model` | Model to use | `gemini-2.0-flash` / `llama3.2` |
+| `--api-key` | Gemini API key (or set `GEMINI_API_KEY`) | — |
 
-**Example:**
+**Examples:**
 
 ```bash
-# Start Ollama
-ollama serve
+# Gemini (default) — via env var
+export GEMINI_API_KEY=sua_chave
+docgen /path/to/repo -o ./docs
 
-# Generate docs for a project
-java -jar target/docgen.jar /path/to/my-project -o /path/to/output
+# Gemini — via flag
+docgen /path/to/repo --api-key sua_chave -o ./docs
 
-# Using a different model
-java -jar target/docgen.jar /path/to/my-project -m mistral -o ./docs
+# Ollama — local model
+docgen /path/to/repo --provider ollama -m mistral -o ./docs
 ```
 
 ## Output
@@ -68,7 +81,13 @@ src/main/java/com/docgen/
 
 ├── PromptBuilder.java   # Builds prompts for README and architecture generation
 
-├── LLMClient.java       # HTTP client → Ollama /api/generate (streaming)
+├── LLMClient.java       # Factory: creates the right LLMProvider
+
+├── LLMProvider.java     # Interface implemented by each provider
+
+├── GeminiProvider.java  # HTTP client → Gemini generateContent API
+
+├── OllamaProvider.java  # HTTP client → Ollama /api/generate (streaming)
 
 └── OutputWriter.java    # Writes README.md and ARCHITECTURE.md
 
@@ -76,5 +95,6 @@ src/main/java/com/docgen/
 
 - Java 21
 - [Picocli](https://picocli.info) — CLI framework
-- [Ollama](https://ollama.com) — local LLM inference
+- [Google Gemini API](https://ai.google.dev) — default LLM provider
+- [Ollama](https://ollama.com) — local LLM alternative
 - Maven — build tool
