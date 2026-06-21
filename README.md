@@ -10,22 +10,22 @@ CLI that scans a code repository and generates `README.md` and `ARCHITECTURE.md`
 
 ## Installation
 
-```bash
-git clone https://github.com/brunocorreia-dev/docgen.git
-cd docgen
-```
-
-Build the fat jar:
+### Option 1 — Script (recommended)
 
 ```bash
-java -cp "$MVN_HOME/boot/plexus-classworlds-2.9.0.jar" \
-  -Dclassworlds.conf="$MVN_HOME/bin/m2.conf" \
-  -Dmaven.multiModuleProjectDirectory=$(pwd) \
-  org.codehaus.plexus.classworlds.launcher.Launcher \
-  -f pom.xml package -q
+curl -fsSL https://raw.githubusercontent.com/brunocorreia-dev/docgen/main/install.sh | bash
 ```
 
-> `$MVN_HOME` is the path to your Maven installation (e.g. `~/idea-IU-.../plugins/maven/lib/maven3`).
+Downloads the latest `docgen.jar` from GitHub Releases, places it in `~/.local/share/docgen/`, and installs a wrapper at `~/.local/bin/docgen`. Checks that Java 21+ and Ollama are present.
+
+### Option 2 — Manual
+
+1. Download `docgen.jar` from the [latest release](https://github.com/brunocorreia-dev/docgen/releases/latest).
+2. Run it directly:
+
+```bash
+java -jar docgen.jar <repo-path> [options]
+```
 
 ## Usage
 

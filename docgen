@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Run docgen from anywhere: ./docgen <repo-path> [--output <dir>]
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec java -jar "$SCRIPT_DIR/target/docgen.jar" "$@"
+JAR="$SCRIPT_DIR/target/docgen.jar"
+if [[ ! -f "$JAR" ]]; then
+  echo "docgen: $JAR not found — run 'mvn package' first." >&2
+  exit 1
+fi
+exec java -jar "$JAR" "$@"
