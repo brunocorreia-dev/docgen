@@ -21,10 +21,13 @@ public class DocGenCLI implements Runnable {
     @Option(names = {"-o", "--output"}, description = "Output directory for generated files (default: current dir)", defaultValue = ".")
     private Path outputDir;
 
-    @Option(names = {"--provider"}, description = "LLM provider: gemini (default) or ollama", defaultValue = "gemini")
+    @Option(names = {"--provider"}, description = "LLM provider: groq (default) or ollama", defaultValue = "groq")
     private String provider;
 
-    @Option(names = {"-m", "--model"}, description = "Model to use (default: gemini-2.0-flash)", defaultValue = "gemini-2.0-flash")
+    @Option(names = {"--api-key"}, description = "Groq API key (or set GROQ_API_KEY)")
+    private String apiKey;
+
+    @Option(names = {"-m", "--model"}, description = "Model to use (default: llama-3.3-70b-versatile for groq, llama3.2 for ollama)", defaultValue = "llama-3.3-70b-versatile")
     private String model;
 
     public static void main(String[] args) {
@@ -35,7 +38,7 @@ public class DocGenCLI implements Runnable {
     @Override
     public void run() {
         try {
-            if ("ollama".equalsIgnoreCase(provider) && "gemini-2.0-flash".equals(model)) {
+            if ("ollama".equalsIgnoreCase(provider) && "llama-3.3-70b-versatile".equals(model)) {
                 model = "llama3.2";
             }
 
@@ -47,7 +50,7 @@ public class DocGenCLI implements Runnable {
             System.out.printf("Collected %d files (%.1f KB of content)%n", ctx.fileCount(), ctx.contentSizeKb());
             System.out.println("Provider: " + provider + " | Model: " + model);
 
-            LLMProvider llm = LLMProviderFactory.create(provider, model);
+            LLMProvider llm = LLMProviderFactory.create(provider, model, apiKey);
 
             System.out.println("\n=== Generating README ===\n");
             String readme = llm.generate(PromptBuilder.readmePrompt(ctx));

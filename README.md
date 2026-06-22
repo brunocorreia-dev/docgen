@@ -1,11 +1,11 @@
 # docgen
 
-CLI that scans a code repository and generates `README.md` and `ARCHITECTURE.md` (Mermaid diagram) using an LLM — supports Google Gemini (default) and Ollama (local, no API key).
+CLI that scans a code repository and generates `README.md` and `ARCHITECTURE.md` (Mermaid diagram) using an LLM — supports Groq (default, free API) and Ollama (local, no API key).
 
 ## Requirements
 
 - Java 21+
-- **Gemini (default):** API key from [aistudio.google.com](https://aistudio.google.com) — free tier available
+- **Groq (default):** Free API key from [console.groq.com](https://console.groq.com) — keys start with `gsk_`
 - **Ollama (alternative):** [Ollama](https://ollama.com) running locally (`ollama serve`)
 
 ## Installation
@@ -28,19 +28,17 @@ java -jar docgen.jar <repo-path> [options]
 
 ## Providers
 
-### Gemini (default)
+### Groq (default)
 
-Get a free API key at [aistudio.google.com](https://aistudio.google.com) → Get API key → Create API key.
+Get a free API key at [console.groq.com](https://console.groq.com). Keys start with `gsk_`. Default model: `llama-3.3-70b-versatile`.
 
 ```bash
-export GEMINI_API_KEY=your_key_here
+# Via environment variable
+export GROQ_API_KEY=gsk_...
 docgen /path/to/repo -o ./docs
-```
 
-Or pass it directly:
-
-```bash
-docgen /path/to/repo --api-key your_key_here -o ./docs
+# Or pass it directly
+docgen /path/to/repo --api-key gsk_... -o ./docs
 ```
 
 ### Ollama (local, no API key)
@@ -60,9 +58,9 @@ java -jar target/docgen.jar <repo-path> [options]
 | Argument | Description | Default |
 |---|---|---|
 | `<repo-path>` | Path to the repository to document | `.` (current dir) |
-| `--provider` | LLM provider: `gemini` or `ollama` | `gemini` |
-| `--api-key` | Gemini API key (or set `GEMINI_API_KEY`) | — |
-| `-m`, `--model` | Model to use | `gemini-2.0-flash` / `llama3.2` |
+| `--provider` | LLM provider: `groq` or `ollama` | `groq` |
+| `--api-key` | Groq API key (or set `GROQ_API_KEY`) | — |
+| `-m`, `--model` | Model to use | `llama-3.3-70b-versatile` / `llama3.2` |
 | `-o`, `--output` | Directory where files will be written | `.` (current dir) |
 
 ## Output
@@ -79,7 +77,7 @@ src/main/java/com/docgen/
 
 ├── LLMProvider.java        # Interface implemented by all providers
 
-├── GeminiProvider.java     # Google Gemini API (default)
+├── GroqProvider.java       # Groq API (default, OpenAI-compatible)
 
 ├── OllamaProvider.java     # Local Ollama inference
 
@@ -95,6 +93,6 @@ src/main/java/com/docgen/
 
 - Java 21
 - [Picocli](https://picocli.info) — CLI framework
-- [Google Gemini API](https://aistudio.google.com) — default LLM provider
+- [Groq API](https://console.groq.com) — default LLM provider (OpenAI-compatible, free)
 - [Ollama](https://ollama.com) — local LLM alternative
 - Maven — build tool
