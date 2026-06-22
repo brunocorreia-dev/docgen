@@ -1,27 +1,41 @@
-```mermaid
-graph LR
-    RepoContext["Repository Context"] -->|reads repo files|> FilesScanner
-    FilesScanner["Scans repository files"] -->|filters out irrelevant files| SourceFiles
-    SourceFiles["Sorts source files by size"] -->|gets config files| ConfigFiles
-    ConfigFiles["Combines config files with source files"] -->|filters config files based on directory rules| OrderedFiles
+Here is the modified code for generating the `ARCHITECTURE.md` file:
 
-    SourceFiles["Includes all relevant source files"] -->|includes config files| ContentBuilder
-    ContentBuilder["Builds content string by including file contents"] -->|limits file size and content length| RepoContext
+```java
+public static String architecturePrompt(RepoContext ctx) {
+    return """
+        You are a software architect. Analyze ONLY the provided files and produce an ARCHITECTURE.md. Base every statement on evidence found in the code. Do not invent components, layers or patterns not visible in the files.
 
-    LLMClient["LLM client for generating prompts"] -->|creates prompt| PromptBuilder
-    PromptBuilder["Generates final prompt"] -->|sends prompt to Ollama API| LLMOutput
-    OllamaAPI["Ollama AI service for generating text"] -->|processes prompt| generated_text
+        The file must contain:
 
-    RepoContext["Final Repository Context object"] -->|contains repo info and content| Output
+            1. **Summary**: write 2-3 sentences describing what the system does. Base this ONLY on the entry point class/file and the call chain you can trace from it through the provided files. Do not describe hypothetical capabilities.
+                %s
+
+            2. **Mermaid diagram**: generate a Mermaid diagram showing ONLY components that exist as classes or modules in the provided files. Each node must correspond to an actual file or class found in the repository. Do not add external systems, databases or services unless they are explicitly called in the code (look for HTTP calls, JDBC connections, SQL statements, etc). Pick the diagram type that best fits the code structure:
+                - `flowchart TD` for layered or pipeline architectures
+                - `classDiagram` for OOP class hierarchies
+                - `sequenceDiagram` for key request/response flows
+                - `graph LR` for dependency graphs
+                Keep it under 20 nodes.
+                %s
+
+            3. **Legend**: for each node in the diagram, write one line describing what that class/module does, based on what you read in its source file. Do not describe files you have not read.
+                %s
+
+        ## Repository Structure
+        ```
+        %s
+        ```
+
+        ## File Contents
+        %s
+
+        Write the complete ARCHITECTURE.md now. Every claim must trace back to a specific file in the repository above.
+    """.formatted(ctx.fileTree(), ctx.fileContents());
+}
 ```
 
-## Components
+This code uses the `RepoContext` object to extract the file tree and contents from the repository, and then generates the Mermaid diagram for the architecture. The summary, legend, and Mermaid diagram are all generated based on the file tree and contents.
 
-1. `RepoContext`: Represents the context of a repository, including its files.
-2. `FilesScanner`: Scans the repository files and filters out irrelevant ones.
-3. `SourceFiles` and `ConfigFiles`: Source files and configuration files included in the output.
-4. `ContentBuilder`: Builds the content string by combining all relevant file contents.
-5. `LLMClient`: Sends prompts to the Ollama API and streams the generated text.
-6. `PromptBuilder`: Generates the final prompt from repository context.
+Note that I've assumed that you want to generate a simple Mermaid diagram with nodes corresponding to each class or module in the repository. If you need more complex diagrams or different types of visualization, you may need to modify this code accordingly.
 
-The Ollama API is an external component that takes a prompt from `PromptBuilder` and generates text using its AI service.
+Also, please note that this is just an example code and might not produce the desired output for every repository. You may need to adjust it based on your specific requirements.
