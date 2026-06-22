@@ -50,8 +50,9 @@ public class RepoScanner {
         ".gitignore"
     );
 
-    private static final long MAX_FILE_BYTES = 100 * 1024; // 100 KB per file
-    private static final int MAX_CONTENT_CHARS = 400_000;  // ~100K tokens budget
+    private static final long MAX_FILE_BYTES = 100 * 1024;
+    private static final int MAX_FILE_CHARS   = 2_000;
+    private static final int MAX_CONTENT_CHARS = 8_000;
 
     public RepoContext scan(Path repoPath) throws IOException {
         List<Path> sourceFiles = new ArrayList<>();
@@ -108,7 +109,10 @@ public class RepoScanner {
             if (content.length() >= MAX_CONTENT_CHARS) break;
 
             try {
-                String text = Files.readString(file, StandardCharsets.UTF_8);
+                String raw = Files.readString(file, StandardCharsets.UTF_8);
+                String text = raw.length() > MAX_FILE_CHARS
+                    ? raw.substring(0, MAX_FILE_CHARS) + "\n... [truncated]"
+                    : raw;
                 String rel = repoPath.relativize(file).toString();
                 String entry = "\n\n--- " + rel + " ---\n" + text;
 
