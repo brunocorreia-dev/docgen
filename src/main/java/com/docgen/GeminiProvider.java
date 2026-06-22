@@ -8,24 +8,36 @@ import java.net.http.HttpResponse;
 
 public class GeminiProvider implements LLMProvider {
 
-    private static final String BASE_URL =
+    private static final String API_URL =
         "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s";
 
     private final String model;
     private final String apiKey;
     private final HttpClient http;
 
-    public GeminiProvider(String model, String apiKey) {
+    public GeminiProvider(String model) {
         this.model = model;
-        this.apiKey = apiKey;
+        this.apiKey = resolveApiKey();
         this.http = HttpClient.newHttpClient();
     }
 
     @Override
     public String generate(String prompt) throws IOException, InterruptedException {
-        String url = BASE_URL.formatted(model, apiKey);
+        String url = API_URL.formatted(model, apiKey);
+
         String body = """
-            {"contents":[{"parts":[{"text":%s}]}]}
+            {
+              "contents": [
+                {
+                  "parts": [
+                    { "text": %s }
+                  ]
+                }
+              ],
+              "generationConfig": {
+                "temperature": 0.2
+              }
+            }
             """.formatted(jsonString(prompt));
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -83,6 +95,17 @@ public class GeminiProvider implements LLMProvider {
             }
         }
         return sb.toString();
+    }
+
+    private String resolveApiKey() {
+        String key = System.getenv("GEMINI_API_KEY");
+        if (key == null || key.isBlank()) {
+            throw new IllegalStateException(
+                "GEMINI_API_KEY environment variable is not set.\n" +
+                "Get your key at https://aistudio.google.com/app/apikey"
+            );
+        }
+        return key;
     }
 
     private String jsonString(String s) {

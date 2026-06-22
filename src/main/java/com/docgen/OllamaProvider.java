@@ -58,7 +58,7 @@ public class OllamaProvider implements LLMProvider {
             http.send(ping, HttpResponse.BodyHandlers.discarding());
         } catch (Exception e) {
             throw new IllegalStateException(
-                "Ollama não está rodando. Inicie com: ollama serve"
+                "Ollama is not running. Start it with: ollama serve"
             );
         }
     }
