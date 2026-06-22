@@ -5,6 +5,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GroqProvider implements LLMProvider {
 
@@ -41,6 +43,13 @@ public class GroqProvider implements LLMProvider {
 
         HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
 
+        if (response.statusCode() == 429) {
+            long waitSeconds = extractRetrySeconds(response.body()) + 2;
+            System.out.println("[docgen] Rate limit hit, waiting " + waitSeconds + "s...");
+            Thread.sleep(waitSeconds * 1000);
+            response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
         if (response.statusCode() != 200) {
             throw new IOException("Groq API error " + response.statusCode() + ": " + response.body());
         }
@@ -53,6 +62,15 @@ public class GroqProvider implements LLMProvider {
         System.out.print(text);
         System.out.println();
         return text;
+    }
+
+    // Extracts seconds from "try again in X.XXs"; returns 10 as fallback.
+    private long extractRetrySeconds(String body) {
+        Matcher m = Pattern.compile("try again in (\\d+(?:\\.\\d+)?)s").matcher(body);
+        if (m.find()) {
+            return (long) Math.ceil(Double.parseDouble(m.group(1)));
+        }
+        return 10;
     }
 
     // Navigates choices[0].message.content without a JSON library.
